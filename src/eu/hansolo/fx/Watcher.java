@@ -9,7 +9,6 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.event.EventTarget;
 import javafx.scene.Node;
 
 import java.io.File;
@@ -28,12 +27,13 @@ import java.nio.file.WatchService;
  * Date: 21.03.13
  * Time: 13:56
  */
-public class DirectoryWatcher extends Node implements Runnable, EventTarget {
-
+public class Watcher extends Node implements Runnable {
     private final Path          PATH;
     private final String        FILE_NAME;
 
-    public DirectoryWatcher(final File FXG_FILE) {
+
+    // ******************** Constructors **************************************
+    public Watcher(final File FXG_FILE) {
         PATH      = FileSystems.getDefault().getPath(FXG_FILE.getParent());
         FILE_NAME = FXG_FILE.getName();
     }
@@ -70,20 +70,7 @@ public class DirectoryWatcher extends Node implements Runnable, EventTarget {
     }
 
 
-    @Override protected PGNode impl_createPGNode() {
-        return null;
-    }
-    @Override public BaseBounds impl_computeGeomBounds(BaseBounds baseBounds, BaseTransform baseTransform) {
-        return null;
-    }
-    @Override protected boolean impl_computeContains(double v, double v2) {
-        return false;
-    }
-    @Override public Object impl_processMXNode(MXNodeAlgorithm mxNodeAlgorithm, MXNodeAlgorithmContext mxNodeAlgorithmContext) {
-        return null;
-    }
-
-
+    // ******************** Methods *******************************************
     private void handleEvent(WatchEvent<?> event) {
         final WatchEvent.Kind<?> KIND = event.kind();
         if (StandardWatchEventKinds.ENTRY_MODIFY.equals(KIND)) {
@@ -134,4 +121,20 @@ public class DirectoryWatcher extends Node implements Runnable, EventTarget {
             return;
         }
     }
+
+
+    // ******************** Methods from Node *********************************
+    @Override protected PGNode impl_createPGNode() {
+        return null;
+    }
+    @Override public BaseBounds impl_computeGeomBounds(BaseBounds baseBounds, BaseTransform baseTransform) {
+        return null;
+    }
+    @Override protected boolean impl_computeContains(double v, double v2) {
+        return false;
+    }
+    @Override public Object impl_processMXNode(MXNodeAlgorithm mxNodeAlgorithm, MXNodeAlgorithmContext mxNodeAlgorithmContext) {
+        return null;
+    }
+
 }
