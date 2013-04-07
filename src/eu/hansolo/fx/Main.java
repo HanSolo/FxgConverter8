@@ -9,6 +9,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Dimension2D;
 import javafx.geometry.Insets;
@@ -25,6 +26,7 @@ import javafx.scene.control.RadioButtonBuilder;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFieldBuilder;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.input.DragEvent;
@@ -35,6 +37,7 @@ import javafx.scene.layout.BorderStrokeBuilder;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -46,6 +49,7 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.SVGPathBuilder;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -64,7 +68,7 @@ import java.util.Map;
  * Time: 14:49
  */
 public class Main extends Application {
-    private static final double    PREVIEW_SIZE = 400;
+    private static final double    PREVIEW_SIZE = 430;
     private HashMap<String, Node>  convertedGroups;
     private TextField              packageInfo;
     private RadioButton            optionJavaFX;
@@ -80,6 +84,7 @@ public class Main extends Application {
     private Watcher                watcher;
     private Thread                 dirWatcherThread;
     private File                   fxgFileToWatch;
+    private PropertiesPane         propertiesPane;
 
 
     // ******************** Initialization ************************************
@@ -94,7 +99,12 @@ public class Main extends Application {
                                                .height(PREVIEW_SIZE)
                                                .fill(new ImagePattern(new Image(getClass().getResource("opacitypattern.png").toExternalForm()), 0, 0, 20, 20, false))
                                                .build();
-        dropZone     = createDropZone(PREVIEW_SIZE);
+        dropZone = createDropZone(PREVIEW_SIZE);
+
+        registerListeners();
+    }
+
+    private void registerListeners() {
         sizeListener = new InvalidationListener() {
             @Override public void invalidated(Observable observable) {
                 double size = dropPane.getWidth() < dropPane.getHeight() ? dropPane.getWidth() : dropPane.getHeight();
@@ -201,8 +211,10 @@ public class Main extends Application {
     private void createPreview(final String FILE_NAME) {
         convertedGroups.clear();
         convertedGroups.put("", transpDropBackground);
-        FxgLiveParser parser = new FxgLiveParser();
-        convertedGroups.putAll(parser.parse(FILE_NAME, dropPane.getWidth(), dropPane.getHeight(), true));
+        FxgLiveParser liveParser = new FxgLiveParser();
+        convertedGroups.putAll(liveParser.parse(FILE_NAME, dropPane.getWidth(), dropPane.getHeight(), true));
+        propertiesPane.setPropertiesMap(liveParser.getControlProperties());
+        System.out.println(liveParser.getControlProperties().values());
         if (convertedGroups.isEmpty()) {
             dropPane.getChildren().setAll(dropZone);
         } else {
@@ -216,7 +228,7 @@ public class Main extends Application {
                                                             .onAction(event -> { updatePreview((CheckBox) event.getSource()); })
                                                             .build());
             }
-            originalSize = parser.getDimension(FILE_NAME);
+            originalSize = liveParser.getDimension(FILE_NAME);
         }
     }
 
@@ -226,7 +238,6 @@ public class Main extends Application {
 
     private void convert() {
         final String FILE_NAME = fxgFileName.substring(fxgFileName.lastIndexOf(System.getProperty("file.separator")) + 1);
-
         FxgParser parser = new FxgParser();
         FxgTranslator translator = new FxgTranslator();
         Map<String, List<FxgElement>> layers = parser.getElements(fxgFileName);
@@ -238,12 +249,18 @@ public class Main extends Application {
             }
         }
         translator.setPackageInfo(packageInfo.getText());
-        translator.translate(new StringBuilder(System.getProperties().getProperty("user.home")).append(File.separator).append("Desktop").append(File.separator).toString(), FILE_NAME, layers, optionJavaFX.isSelected() ? Language.JAVAFX : Language.CANVAS, Double.toString(originalSize.getWidth()), Double.toString(originalSize.getHeight()), true, "", parser.getProperties(), extendRegion.isSelected());
+        translator.translate(new StringBuilder(System.getProperties().getProperty("user.home")).append(File.separator).append("Desktop").append(File.separator).toString(), FILE_NAME, layers, optionJavaFX.isSelected() ? Language.JAVAFX : Language.CANVAS, Double.toString(originalSize.getWidth()), Double.toString(originalSize.getHeight()), true, "", propertiesPane.getPropertiesMap(), extendRegion.isSelected());
+    }
+
+    private void initOnFxThread() {
+        propertiesPane = new PropertiesPane();
     }
 
 
     // ******************** App start/stop ************************************
     @Override public void start(Stage stage) {
+        initOnFxThread();
+
         dropPane = new StackPane();
         dropPane.setPadding(new Insets(10, 10, 10, 10));
         dropPane.setPrefSize(PREVIEW_SIZE, PREVIEW_SIZE);
@@ -272,7 +289,23 @@ public class Main extends Application {
 
         extendRegion = CheckBoxBuilder.create().text("extend Region").build();
 
-        optionPane.getChildren().addAll(packageInfo, optionJavaFX, optionCanvas, extendRegion);
+        ToggleButton propertiesButton = new ToggleButton("Properties");
+        propertiesButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent actionEvent) {
+                if (propertiesButton.isSelected()) {
+                    propertiesPane.show();
+                } else {
+                    propertiesPane.hide();
+                }
+            }
+        });
+        propertiesPane.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override public void handle(WindowEvent windowEvent) {
+                propertiesButton.setSelected(false);
+            }
+        });
+
+        optionPane.getChildren().addAll(packageInfo, optionJavaFX, optionCanvas, extendRegion, propertiesButton);
 
         GridPane pane = new GridPane();
         pane.add(dropPane, 0, 0);
@@ -288,9 +321,10 @@ public class Main extends Application {
 
         Button convertButton = new Button("Convert");
         convertButton.setOnAction(actionEvent -> { convert(); });
-        convertButton.setAlignment(Pos.CENTER_LEFT);
 
         HBox buttonPane = new HBox();
+        Pane spacer = new Pane();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
         buttonPane.setAlignment(Pos.CENTER_RIGHT);
         buttonPane.setSpacing(30);
         buttonPane.setPadding(new Insets(5, 5, 5, 5));
