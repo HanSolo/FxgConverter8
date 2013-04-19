@@ -20,6 +20,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckBoxBuilder;
+import javafx.scene.control.Label;
+import javafx.scene.control.LabelBuilder;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.RadioButtonBuilder;
@@ -31,14 +33,20 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.BackgroundBuilder;
+import javafx.scene.layout.BackgroundFillBuilder;
 import javafx.scene.layout.BorderBuilder;
 import javafx.scene.layout.BorderStrokeBuilder;
 import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.RegionBuilder;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -48,7 +56,11 @@ import javafx.scene.shape.RectangleBuilder;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.SVGPathBuilder;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 
 import java.io.File;
@@ -69,6 +81,8 @@ import java.util.Map;
  */
 public class Main extends Application {
     private static final double    PREVIEW_SIZE = 430;
+    private double                 dragX;
+    private double                 dragY;
     private HashMap<String, Node>  convertedGroups;
     private TextField              packageInfo;
     private RadioButton            optionJavaFX;
@@ -137,7 +151,7 @@ public class Main extends Application {
                                                          "M 80 37.3333 L 50.5 37.3333 L 50.5 66.8333 L 50.5 68.8333 " +
                                                          "L 32.5 68.8333 L 65.25 95.5 L 98 68.8333 L 80 68.8333 " +
                                                          "L 80 37.3333 Z")
-                                                .fill(Color.rgb(173,172,174))
+                                                .fill(Color.web("#918c8f"))
                                                 .stroke(null)
                                                 .build();
         DROP_ZONE.setScaleX(SIZE / 132 * 0.8);
@@ -271,9 +285,9 @@ public class Main extends Application {
         dropPane.getChildren().add(dropZone);
         dropPane.setBorder(BorderBuilder.create()
                                         .strokes(BorderStrokeBuilder.create()
-                                                                    .bottomStroke(Color.LIGHTGRAY)
+                                                                    .bottomStroke(Color.web("#918c8f"))
                                                                     .bottomStyle(BorderStrokeStyle.SOLID)
-                                                                    .rightStroke(Color.LIGHTGRAY)
+                                                                    .rightStroke(Color.web("#918c8f"))
                                                                     .rightStyle(BorderStrokeStyle.SOLID)
                                                                     .build())
                                         .build());
@@ -290,6 +304,7 @@ public class Main extends Application {
         extendRegion = CheckBoxBuilder.create().text("extend Region").build();
 
         ToggleButton propertiesButton = new ToggleButton("Properties");
+        propertiesButton.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 13));
         propertiesButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent actionEvent) {
                 if (propertiesButton.isSelected()) {
@@ -307,19 +322,21 @@ public class Main extends Application {
 
         optionPane.getChildren().addAll(packageInfo, optionJavaFX, optionCanvas, extendRegion, propertiesButton);
 
-        GridPane pane = new GridPane();
-        pane.add(dropPane, 0, 0);
-        pane.add(optionPane, 1, 0);
-        pane.add(layerListView, 2, 0);
+        GridPane grid = new GridPane();
+        grid.add(dropPane, 0, 0);
+        grid.add(optionPane, 1, 0);
+        grid.add(layerListView, 2, 0);
         GridPane.setHgrow(dropPane, Priority.ALWAYS);
         GridPane.setVgrow(dropPane, Priority.ALWAYS);
         GridPane.setHgrow(layerListView, Priority.SOMETIMES);
         GridPane.setVgrow(layerListView, Priority.ALWAYS);
 
         Button exitButton    = new Button("Exit");
+        exitButton.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 13));
         exitButton.setOnAction(actionEvent -> { Platform.exit(); });
 
         Button convertButton = new Button("Convert");
+        convertButton.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 13));
         convertButton.setOnAction(actionEvent -> { convert(); });
 
         HBox buttonPane = new HBox();
@@ -331,12 +348,63 @@ public class Main extends Application {
         buttonPane.getChildren().addAll(convertButton, exitButton);
 
         GridPane.setColumnSpan(buttonPane, 3);
-        pane.add(buttonPane, 0, 1);
+        grid.add(buttonPane, 0, 1);
 
-        Scene scene = new Scene(pane);
+        // Window Header
+        Label headerLabel = LabelBuilder.create()
+                                        .prefWidth(190)
+                                        .prefHeight(22)
+                                        .alignment(Pos.CENTER)
+                                        .text("FXG Converter 8")
+                                        .font(Font.font("Arial", FontWeight.NORMAL, FontPosture.REGULAR, 12))
+                                        .textFill(Color.WHITE)
+                                        .build();
+
+        Region closeIcon = RegionBuilder.create()
+                                        .styleClass("close")
+                                        .onMousePressed(new EventHandler<MouseEvent>() {
+                                            @Override public void handle(MouseEvent mouseEvent) {Platform.exit();
+                                            }
+                                        } )
+                                        .minWidth(16)
+                                        .minHeight(16)
+                                        .prefWidth(16)
+                                        .prefHeight(16)
+                                        .pickOnBounds(true)
+                                        .layoutX(5)
+                                        .layoutY(3)
+                                        .build();
+
+        Pane windowHeader = new Pane();
+        windowHeader.getStyleClass().add("header");
+        windowHeader.setOnMousePressed(new EventHandler<MouseEvent>() {
+            @Override public void handle(MouseEvent mouseEvent) {
+                dragX = stage.getX() - mouseEvent.getScreenX();
+                dragY = stage.getY() - mouseEvent.getScreenY();
+            }
+        });
+        windowHeader.setOnMouseDragged(new EventHandler<MouseEvent>() {
+            @Override public void handle(MouseEvent mouseEvent) {
+                stage.setX(mouseEvent.getScreenX() + dragX);
+                stage.setY(mouseEvent.getScreenY() + dragY);
+            }
+        });
+        windowHeader.getChildren().addAll(headerLabel, closeIcon);
+
+        VBox pane = new VBox();
+        pane.setBackground(BackgroundBuilder.create()
+                                            .fills(BackgroundFillBuilder.create()
+                                                                        .fill(Color.rgb(41, 32, 32))
+                                                                        .radii(new CornerRadii(5))
+                                                                        .build())
+                                            .build());
+        pane.getChildren().addAll(windowHeader, grid);
+
+        Scene scene = new Scene(pane, null);
+        scene.getStylesheets().add(getClass().getResource("fxgconverter.css").toExternalForm());
 
         stage.setScene(scene);
-        stage.setTitle("FXG Converter 8");
+        stage.initStyle(StageStyle.TRANSPARENT);
         stage.setResizable(false);
         stage.show();
     }

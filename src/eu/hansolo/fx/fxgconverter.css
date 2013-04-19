@@ -1,4 +1,6 @@
-.converter {}
+.converter {
+    -fx-focus-color: transparent;
+}
 
 .converter .add-button {
     -fx-background-color   : transparent;
@@ -36,6 +38,106 @@
     -fx-background-image   : url('delete_disabled.png');
 }
 
+.header {
+    -fx-background-color: linear-gradient(to bottom,
+                                          #636665 0%,
+                                          #565f5d 1%,
+                                          #484a48 50%,
+                                          #3d3837 50%,
+                                          #3d3938 100%);
+    -fx-scale-shape     : true;
+    -fx-shape           : "M 0 5 C 0 2.2385 2.2385 0 5 0 L 160 0 C 162.7615 0 165 2.2385 165 5 L 165 22 L 165 22 L 0 22 L 0 22 L 0 5 Z";
+}
+
+.list-view {
+    -fx-background-color: #918c8f, rgb(41, 32, 32);
+    -fx-text-fill: white;
+}
+
 .list-cell {
-    -fx-cell-size: 22;
+    -fx-cell-size       : 22;
+    -fx-background-color: rgb(41, 32, 32);
+    -fx-text-fill: white;
+}
+.list-cell:odd {
+    -fx-cell-size       : 22;
+    -fx-background-color: rgb(61, 52, 52);
+    -fx-text-fill: white;
+}
+
+
+.button {
+    -fx-shadow-highlight-color: transparent;
+    -fx-outer-border          : #918c8f;
+    -fx-inner-border          : transparent;
+    -fx-body-color            : linear-gradient(to bottom,
+                                                #444648 0%,
+                                                #363234 50%,
+                                                #2e272a 50%,
+                                                #251f21 100%);
+    -fx-background-insets     : 0, 0, 0, 1;
+    -fx-text-fill             : white;
+}
+.button:armed {
+    -fx-body-color: linear-gradient(to bottom,
+                                    derive(#444648,20%) 0%,
+                                    derive(#363234,20%) 50%,
+                                    derive(#2e272a,20%) 50%,
+                                    derive(#251f21,20%) 100%);
+}
+
+.toggle-button {
+    -fx-shadow-highlight-color: transparent;
+    -fx-outer-border          : #918c8f;
+    -fx-inner-border          : transparent;
+    -fx-body-color            : linear-gradient(to bottom,
+                                                #444648 0%,
+                                                #363234 50%,
+                                                #2e272a 50%,
+                                                #251f21 100%);
+    -fx-background-insets     : 0, 0, 0, 1;
+    -fx-text-fill             : white;
+}
+.toggle-button:selected {
+    -fx-background-color: linear-gradient(to bottom,
+                                          derive(#444648,20%) 0%,
+                                          derive(#363234,20%) 50%,
+                                          derive(#2e272a,20%) 50%,
+                                          derive(#251f21,20%) 100%);
+}
+
+.label {
+    -fx-text-fill: white;
+}
+
+.radio-button {
+    -fx-text-fill: white;
+}
+
+.check-box {
+    -fx-text-fill: white;
+}
+
+.combo-box-base {
+    -fx-text-fill: white;
+}
+.combo-box-base .arrow-button {
+    -fx-shadow-highlight-color: transparent;
+    -fx-outer-border          : #918c8f;
+    -fx-inner-border          : transparent;
+    -fx-body-color            : linear-gradient(to bottom,
+                                                #444648 0%,
+                                                #363234 50%,
+                                                #2e272a 50%,
+                                                #251f21 100%);
+    -fx-background-insets     : 0, 0, 1, 1;
+}
+
+.close {
+    -fx-background-color: rgb(210, 210, 210);
+    -fx-scale-shape     : true;
+    -fx-shape           : "M8,16 C5.35,15.893 2.884,14.738 1.366,12.473 C-1.054,8.861 -0.129,3.816 3.527,1.366 C7.139,-1.054 12.184,-0.129 14.634,3.527 C15.899,5.415 15.811,6.126 16,8 C16,12.418 12.418,16 8,16 z z M3.757,10.828 L5.172,12.243 L8,9.414 L10.828,12.243 L12.243,10.828 L9.414,8 L12.243,5.172 L10.828,3.757 L8,6.586 L5.172,3.757 L3.757,5.172 L6.586,8 z";
+}
+.close:hover {
+    -fx-background-color: rgb(238, 238, 238);
 }

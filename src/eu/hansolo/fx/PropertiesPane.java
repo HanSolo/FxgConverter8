@@ -18,14 +18,27 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.LabelBuilder;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BackgroundBuilder;
+import javafx.scene.layout.BackgroundFillBuilder;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.RegionBuilder;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,13 +56,14 @@ public class PropertiesPane extends Stage {
         "double",
         "float",
         "int",
-        "byte",
         "long",
         "String",
         "Color",
         "Object"
     };
-    private GridPane               pane;
+    private double                 dragX;
+    private double                 dragY;
+    private GridPane grid;
     private ObservableList<String> types;
     private ComboBox               typeSelection;
     private CheckBox               readOnly;
@@ -60,7 +74,7 @@ public class PropertiesPane extends Stage {
 
 
     public PropertiesPane() {
-        pane           = new GridPane();
+        grid = new GridPane();
         types          = FXCollections.observableArrayList(TYPES);
         typeSelection  = new ComboBox(types);
         readOnly       = new CheckBox();
@@ -74,8 +88,8 @@ public class PropertiesPane extends Stage {
     }
 
     private void init() {
-        pane.getStylesheets().add(getClass().getResource("fxgconverter.css").toExternalForm());
-        pane.getStyleClass().add("converter");
+        grid.getStylesheets().add(getClass().getResource("fxgconverter.css").toExternalForm());
+        grid.getStyleClass().add("converter");
     }
 
     private void initGraphics() {
@@ -84,33 +98,33 @@ public class PropertiesPane extends Stage {
         //typeSelection.setEditable(true);
         typeSelection.setPrefWidth(90);
         typeSelection.getSelectionModel().select(0);
-        pane.add(typeLabel, 0, 0);
-        pane.add(typeSelection, 0, 1);
+        grid.add(typeLabel, 0, 0);
+        grid.add(typeSelection, 0, 1);
 
         Label readOnlyLabel = new Label("R/O");
         GridPane.setHalignment(readOnlyLabel, HPos.CENTER);
-        pane.add(readOnlyLabel, 1, 0);
-        pane.add(readOnly, 1, 1);
+        grid.add(readOnlyLabel, 1, 0);
+        grid.add(readOnly, 1, 1);
 
         Label nameLabel = new Label("Name");
         GridPane.setHalignment(nameLabel, HPos.CENTER);
         name.setAlignment(Pos.CENTER_RIGHT);
-        pane.add(nameLabel, 2, 0);
-        pane.add(name, 2, 1);
+        grid.add(nameLabel, 2, 0);
+        grid.add(name, 2, 1);
 
         Label defaultValueLabel = new Label("Default");
         GridPane.setHalignment(defaultValueLabel, HPos.CENTER);
         defaultValue.setAlignment(Pos.CENTER_RIGHT);
         defaultValue.setPrefWidth(80);
-        pane.add(defaultValueLabel, 3, 0);
-        pane.add(defaultValue, 3, 1);
+        grid.add(defaultValueLabel, 3, 0);
+        grid.add(defaultValue, 3, 1);
 
         addButton.getStyleClass().add("add-button");
         addButton.setPrefSize(20, 20);
-        pane.add(addButton, 4, 0);
+        grid.add(addButton, 4, 0);
         GridPane.setRowSpan(addButton, 2);
 
-        propertiesList.setCellFactory(param -> {
+        propertiesList.setCellFactory((ListView<FxgVariable> param) -> {
             FxgVariableCell cell = new FxgVariableCell();
             cell.setAlignment(Pos.CENTER);
             cell.setOnDeleteEventFired(deleteEvent -> {
@@ -119,14 +133,71 @@ public class PropertiesPane extends Stage {
             return cell;
         });
         propertiesList.setPrefHeight(150);
-        pane.add(propertiesList, 0, 2);
+        grid.add(propertiesList, 0, 2);
         GridPane.setColumnSpan(propertiesList, 5);
 
-        pane.setHgap(10);
-        pane.setVgap(5);
-        pane.setPadding(new Insets(10, 10, 10, 10));
+        grid.setHgap(10);
+        grid.setVgap(5);
+        grid.setPadding(new Insets(10, 10, 10, 10));
 
-        setScene(new Scene(pane));
+        // Window Header
+        Label headerLabel = LabelBuilder.create()
+                                        .prefWidth(190)
+                                        .prefHeight(22)
+                                        .alignment(Pos.CENTER)
+                                        .text("Properties")
+                                        .font(Font.font("Arial", FontWeight.NORMAL, FontPosture.REGULAR, 12))
+                                        .textFill(Color.WHITE)
+                                        .build();
+
+        Region closeIcon = RegionBuilder.create()
+                                        .styleClass("close")
+                                        .onMousePressed(new EventHandler<MouseEvent>() {
+                                            @Override public void handle(MouseEvent mouseEvent) {
+                                                close();
+                                            }
+                                        } )
+                                        .minWidth(16)
+                                        .minHeight(16)
+                                        .prefWidth(16)
+                                        .prefHeight(16)
+                                        .pickOnBounds(true)
+                                        .layoutX(5)
+                                        .layoutY(3)
+                                        .build();
+
+        Pane windowHeader = new Pane();
+        windowHeader.getStyleClass().add("header");
+        windowHeader.setOnMousePressed(new EventHandler<MouseEvent>() {
+            @Override public void handle(MouseEvent mouseEvent) {
+                dragX = getX() - mouseEvent.getScreenX();
+                dragY = getY() - mouseEvent.getScreenY();
+            }
+        });
+        windowHeader.setOnMouseDragged(new EventHandler<MouseEvent>() {
+            @Override public void handle(MouseEvent mouseEvent) {
+                setX(mouseEvent.getScreenX() + dragX);
+                setY(mouseEvent.getScreenY() + dragY);
+            }
+        });
+        windowHeader.getChildren().addAll(headerLabel, closeIcon);
+
+        VBox pane = new VBox();
+        pane.setBackground(BackgroundBuilder.create()
+                                            .fills(BackgroundFillBuilder.create()
+                                                                        .fill(Color.rgb(41, 32, 32))
+                                                                        .radii(new CornerRadii(5))
+                                                                        .build())
+                                            .build());
+        pane.getChildren().addAll(windowHeader, grid);
+
+        Scene scene = new Scene(pane, null);
+        scene.getStylesheets().add(getClass().getResource("fxgconverter.css").toExternalForm());
+        setScene(scene);
+
+        initStyle(StageStyle.TRANSPARENT);
+        setResizable(false);
+
     }
 
     private void registerListeners() {
@@ -182,13 +253,6 @@ public class PropertiesPane extends Stage {
             } catch (NumberFormatException exception) {
                 return false;
             }
-        } else if ("byte" == SELECTED_TYPE) {
-            try {
-                Byte.parseByte(DEFAULT);
-                return true;
-            } catch (NumberFormatException exception) {
-                return false;
-            }
         } else if ("long" == SELECTED_TYPE) {
             try {
                 Long.parseLong(DEFAULT);
@@ -199,9 +263,9 @@ public class PropertiesPane extends Stage {
         } else if ("String" == SELECTED_TYPE) {
             return true;
         } else if ("Color" == SELECTED_TYPE) {
-
+            return true;
         } else if ("Object" == SELECTED_TYPE) {
-
+            return true;
         }
         return false;
     }
@@ -236,7 +300,7 @@ public class PropertiesPane extends Stage {
         private CheckBox    readOnly;
         private Label       name;
         private Label       defaultValue;
-        private Pane        spacer;
+        private Region      spacer;
         private Button      button;
         private FxgVariable variable;
 
@@ -248,7 +312,7 @@ public class PropertiesPane extends Stage {
             readOnly     = new CheckBox();
             name         = new Label();
             defaultValue = new Label();
-            spacer       = new Pane();
+            spacer       = new Region();
             button       = new Button();
             init();
             initGraphics();
