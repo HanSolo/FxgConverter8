@@ -8,7 +8,6 @@ import eu.hansolo.fxgtools.main.FxgTranslator;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Dimension2D;
@@ -19,15 +18,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.CheckBoxBuilder;
 import javafx.scene.control.Label;
-import javafx.scene.control.LabelBuilder;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
-import javafx.scene.control.RadioButtonBuilder;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextFieldBuilder;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
@@ -35,26 +30,20 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.BackgroundBuilder;
-import javafx.scene.layout.BackgroundFillBuilder;
-import javafx.scene.layout.BorderBuilder;
-import javafx.scene.layout.BorderStrokeBuilder;
-import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.RegionBuilder;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.RectangleBuilder;
 import javafx.scene.shape.SVGPath;
-import javafx.scene.shape.SVGPathBuilder;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
@@ -90,7 +79,7 @@ public class Main extends Application {
     private CheckBox               extendRegion;
     private ListView<CheckBox>     layerListView;
     private Rectangle              transpDropBackground;
-    private Shape                  dropZone;
+    private Shape                  dropZoneSymbol;
     private StackPane              dropPane;
     private String                 fxgFileName;
     private Dimension2D            originalSize;
@@ -108,52 +97,47 @@ public class Main extends Application {
         layerListView.setPrefWidth(150);
         layerListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
-        transpDropBackground = RectangleBuilder.create()
-                                               .width(PREVIEW_SIZE)
-                                               .height(PREVIEW_SIZE)
-                                               .fill(new ImagePattern(new Image(getClass().getResource("opacitypattern.png").toExternalForm()), 0, 0, 20, 20, false))
-                                               .build();
-        dropZone = createDropZone(PREVIEW_SIZE);
+        transpDropBackground = new Rectangle(PREVIEW_SIZE, PREVIEW_SIZE);
+        transpDropBackground.setFill(new ImagePattern(new Image(getClass().getResource("opacitypattern.png").toExternalForm()), 0, 0, 20, 20, false));
+
+        dropZoneSymbol = createDropZone(PREVIEW_SIZE);
 
         registerListeners();
     }
 
     private void registerListeners() {
-        sizeListener = new InvalidationListener() {
-            @Override public void invalidated(Observable observable) {
-                double size = dropPane.getWidth() < dropPane.getHeight() ? dropPane.getWidth() : dropPane.getHeight();
-                dropPane.setPrefSize(size, size);
-                dropZone.setScaleX(size / 132 * 0.8);
-                dropZone.setScaleY(size / 132 * 0.8);
-            }
+        sizeListener = observable -> {
+            double size = dropPane.getWidth() < dropPane.getHeight() ? dropPane.getWidth() : dropPane.getHeight();
+            dropPane.setPrefSize(size, size);
+            dropZoneSymbol.setScaleX(size / 132 * 0.8);
+            dropZoneSymbol.setScaleY(size / 132 * 0.8);
         };
     }
 
 
     // ******************** Private methods ***********************************
     private Shape createDropZone(final double SIZE) {
-        final SVGPath DROP_ZONE = SVGPathBuilder.create()
-                                                .content("M 60 0 L 30 0 L 30 6 L 60 6 L 60 0 ZM 102 0 L 72 0 L 72 6 " +
-                                                         "L 102 6 L 102 0 ZM 132 18 L 132 16.5 C 132 5.6616 126.3385 " +
-                                                         "0 115.5 0 L 114 0 L 114 6 L 115 6 C 123.0623 6 126 8.9377 " +
-                                                         "126 17 L 126 18 L 132 18 ZM 132 60 L 132 30 L 126 30 L 126 " +
-                                                         "60 L 132 60 ZM 132 102 L 132 72 L 126 72 L 126 102 L 132 " +
-                                                         "102 ZM 114 132 L 115.5 132 C 126.3385 132 132 126.3385 132 " +
-                                                         "115.5 L 132 114 L 126 114 L 126 115 C 126 123.0623 " +
-                                                         "123.0623 126 115 126 L 114 126 L 114 132 ZM 72 132 " +
-                                                         "L 102 132 L 102 126 L 72 126 L 72 132 ZM 30 132 L 60 132 " +
-                                                         "L 60 126 L 30 126 L 30 132 ZM 0 114 L 0 115.5 C 0 126.3385 " +
-                                                         "5.6616 132 16.5 132 L 18 132 L 18 126 L 17 126 C 8.9377 " +
-                                                         "126 6 123.0623 6 115 L 6 114 L 0 114 ZM 0 72 L 0 102 " +
-                                                         "L 6 102 L 6 72 L 0 72 ZM 0 30 L 0 60 L 6 60 L 6 30 L 0 30 Z" +
-                                                         "M 0 16.5 L 0 18 L 6 18 L 6 17 C 6 8.9377 8.9377 6 17 6 " +
-                                                         "L 18 6 L 18 0 L 16.5 0 C 5.6616 0 0 5.6616 0 16.5 Z" +
-                                                         "M 80 37.3333 L 50.5 37.3333 L 50.5 66.8333 L 50.5 68.8333 " +
-                                                         "L 32.5 68.8333 L 65.25 95.5 L 98 68.8333 L 80 68.8333 " +
-                                                         "L 80 37.3333 Z")
-                                                .fill(Color.web("#918c8f"))
-                                                .stroke(null)
-                                                .build();
+        final SVGPath DROP_ZONE = new SVGPath();
+        DROP_ZONE.setContent("M 60 0 L 30 0 L 30 6 L 60 6 L 60 0 ZM 102 0 L 72 0 L 72 6 " +
+                             "L 102 6 L 102 0 ZM 132 18 L 132 16.5 C 132 5.6616 126.3385 " +
+                             "0 115.5 0 L 114 0 L 114 6 L 115 6 C 123.0623 6 126 8.9377 " +
+                             "126 17 L 126 18 L 132 18 ZM 132 60 L 132 30 L 126 30 L 126 " +
+                             "60 L 132 60 ZM 132 102 L 132 72 L 126 72 L 126 102 L 132 " +
+                             "102 ZM 114 132 L 115.5 132 C 126.3385 132 132 126.3385 132 " +
+                             "115.5 L 132 114 L 126 114 L 126 115 C 126 123.0623 " +
+                             "123.0623 126 115 126 L 114 126 L 114 132 ZM 72 132 " +
+                             "L 102 132 L 102 126 L 72 126 L 72 132 ZM 30 132 L 60 132 " +
+                             "L 60 126 L 30 126 L 30 132 ZM 0 114 L 0 115.5 C 0 126.3385 " +
+                             "5.6616 132 16.5 132 L 18 132 L 18 126 L 17 126 C 8.9377 " +
+                             "126 6 123.0623 6 115 L 6 114 L 0 114 ZM 0 72 L 0 102 " +
+                             "L 6 102 L 6 72 L 0 72 ZM 0 30 L 0 60 L 6 60 L 6 30 L 0 30 Z" +
+                             "M 0 16.5 L 0 18 L 6 18 L 6 17 C 6 8.9377 8.9377 6 17 6 " +
+                             "L 18 6 L 18 0 L 16.5 0 C 5.6616 0 0 5.6616 0 16.5 Z" +
+                             "M 80 37.3333 L 50.5 37.3333 L 50.5 66.8333 L 50.5 68.8333 " +
+                             "L 32.5 68.8333 L 65.25 95.5 L 98 68.8333 L 80 68.8333 " +
+                             "L 80 37.3333 Z");
+        DROP_ZONE.setFill(Color.web("#918c8f"));
+        DROP_ZONE.setStroke(null);
         DROP_ZONE.setScaleX(SIZE / 132 * 0.8);
         DROP_ZONE.setScaleY(SIZE / 132 * 0.8);
         return DROP_ZONE;
@@ -209,6 +193,7 @@ public class Main extends Application {
 
                         // Create the preview image
                         createPreview(FULL_PATH);
+                        //convert();
                     } catch (UnsupportedEncodingException e) {
 
                     }
@@ -230,17 +215,16 @@ public class Main extends Application {
         propertiesPane.setPropertiesMap(liveParser.getControlProperties());
         System.out.println(liveParser.getControlProperties().values());
         if (convertedGroups.isEmpty()) {
-            dropPane.getChildren().setAll(dropZone);
+            dropPane.getChildren().setAll(dropZoneSymbol);
         } else {
             dropPane.getChildren().setAll(convertedGroups.values());
             layerListView.getItems().clear();
             for (String key : convertedGroups.keySet()) {
                 if (key.toLowerCase().startsWith("properties") || key.isEmpty()) continue;
-                layerListView.getItems().add(CheckBoxBuilder.create()
-                                                            .text(key)
-                                                            .selected(true)
-                                                            .onAction(event -> { updatePreview((CheckBox) event.getSource()); })
-                                                            .build());
+                CheckBox checkBox = new CheckBox(key);
+                checkBox.setSelected(true);
+                checkBox.setOnAction(event -> { updatePreview((CheckBox) event.getSource()); });
+                layerListView.getItems().add(checkBox);
             }
             originalSize = liveParser.getDimension(FILE_NAME);
         }
@@ -282,7 +266,8 @@ public class Main extends Application {
         dropPane.setMaxSize(PREVIEW_SIZE, PREVIEW_SIZE);
         dropPane.widthProperty().addListener(sizeListener);
         dropPane.heightProperty().addListener(sizeListener);
-        dropPane.getChildren().add(dropZone);
+        dropPane.getChildren().add(dropZoneSymbol);
+        /*
         dropPane.setBorder(BorderBuilder.create()
                                         .strokes(BorderStrokeBuilder.create()
                                                                     .bottomStroke(Color.web("#918c8f"))
@@ -291,17 +276,22 @@ public class Main extends Application {
                                                                     .rightStyle(BorderStrokeStyle.SOLID)
                                                                     .build())
                                         .build());
+                                        */
         initDragAndDrop(dropPane);
 
         VBox optionPane = new VBox();
         optionPane.setSpacing(10);
         optionPane.setPadding(new Insets(10, 10, 10, 10));
-        packageInfo  = TextFieldBuilder.create().promptText("eu.hansolo.fx").build();
+        packageInfo  = new TextField();
+        packageInfo.setPromptText("eu.hansolo.fx");
         ToggleGroup optionGroup = new ToggleGroup();
-        optionJavaFX = RadioButtonBuilder.create().text("JavaFX").selected(true).toggleGroup(optionGroup).build();
-        optionCanvas = RadioButtonBuilder.create().text("Canvas").toggleGroup(optionGroup).build();
+        optionJavaFX = new RadioButton("JavaFX");
+        optionJavaFX.setSelected(true);
+        optionJavaFX.setToggleGroup(optionGroup);
+        optionCanvas = new RadioButton("Canvas");
+        optionCanvas.setToggleGroup(optionGroup);
 
-        extendRegion = CheckBoxBuilder.create().text("extend Region").build();
+        extendRegion = new CheckBox("extend Region");
 
         ToggleButton propertiesButton = new ToggleButton("Properties");
         propertiesButton.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 13));
@@ -351,29 +341,23 @@ public class Main extends Application {
         grid.add(buttonPane, 0, 1);
 
         // Window Header
-        Label headerLabel = LabelBuilder.create()
-                                        .prefWidth(190)
-                                        .prefHeight(22)
-                                        .alignment(Pos.CENTER)
-                                        .text("FXG Converter 8")
-                                        .font(Font.font("Arial", FontWeight.NORMAL, FontPosture.REGULAR, 12))
-                                        .textFill(Color.WHITE)
-                                        .build();
+        Label headerLabel = new Label("FXG Converter 8");
+        headerLabel.setPrefWidth(190);
+        headerLabel.setPrefHeight(22);
+        headerLabel.setAlignment(Pos.CENTER);
+        headerLabel.setFont(Font.font("Arial", FontWeight.NORMAL, FontPosture.REGULAR, 12));
+        headerLabel.setTextFill(Color.WHITE);
 
-        Region closeIcon = RegionBuilder.create()
-                                        .styleClass("close")
-                                        .onMousePressed(new EventHandler<MouseEvent>() {
-                                            @Override public void handle(MouseEvent mouseEvent) {Platform.exit();
-                                            }
-                                        } )
-                                        .minWidth(16)
-                                        .minHeight(16)
-                                        .prefWidth(16)
-                                        .prefHeight(16)
-                                        .pickOnBounds(true)
-                                        .layoutX(5)
-                                        .layoutY(3)
-                                        .build();
+        Region closeIcon = new Region();
+        closeIcon.getStyleClass().add("close");
+        closeIcon.setOnMousePressed(mouseEvent -> { Platform.exit(); });
+        closeIcon.setMinWidth(16);
+        closeIcon.setMinHeight(16);
+        closeIcon.setPrefWidth(16);
+        closeIcon.setPrefHeight(16);
+        closeIcon.setPickOnBounds(true);
+        closeIcon.setLayoutX(5);
+        closeIcon.setLayoutY(3);
 
         Pane windowHeader = new Pane();
         windowHeader.getStyleClass().add("header");
@@ -391,13 +375,9 @@ public class Main extends Application {
         });
         windowHeader.getChildren().addAll(headerLabel, closeIcon);
 
+        Background bkg = new Background(new BackgroundFill(Color.rgb(41, 32, 32), new CornerRadii(5), Insets.EMPTY));
         VBox pane = new VBox();
-        pane.setBackground(BackgroundBuilder.create()
-                                            .fills(BackgroundFillBuilder.create()
-                                                                        .fill(Color.rgb(41, 32, 32))
-                                                                        .radii(new CornerRadii(5))
-                                                                        .build())
-                                            .build());
+        pane.setBackground(bkg);
         pane.getChildren().addAll(windowHeader, grid);
 
         Scene scene = new Scene(pane, null);

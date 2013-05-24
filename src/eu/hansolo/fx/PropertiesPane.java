@@ -18,20 +18,18 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.LabelBuilder;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BackgroundBuilder;
-import javafx.scene.layout.BackgroundFillBuilder;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.RegionBuilder;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -141,30 +139,23 @@ public class PropertiesPane extends Stage {
         grid.setPadding(new Insets(10, 10, 10, 10));
 
         // Window Header
-        Label headerLabel = LabelBuilder.create()
-                                        .prefWidth(190)
-                                        .prefHeight(22)
-                                        .alignment(Pos.CENTER)
-                                        .text("Properties")
-                                        .font(Font.font("Arial", FontWeight.NORMAL, FontPosture.REGULAR, 12))
-                                        .textFill(Color.WHITE)
-                                        .build();
+        Label headerLabel = new Label("Properties");
+        headerLabel.setPrefWidth(190);
+        headerLabel.setPrefHeight(22);
+        headerLabel.setAlignment(Pos.CENTER);
+        headerLabel.setFont(Font.font("Arial", FontWeight.NORMAL, FontPosture.REGULAR, 12));
+        headerLabel.setTextFill(Color.WHITE);
 
-        Region closeIcon = RegionBuilder.create()
-                                        .styleClass("close")
-                                        .onMousePressed(new EventHandler<MouseEvent>() {
-                                            @Override public void handle(MouseEvent mouseEvent) {
-                                                close();
-                                            }
-                                        } )
-                                        .minWidth(16)
-                                        .minHeight(16)
-                                        .prefWidth(16)
-                                        .prefHeight(16)
-                                        .pickOnBounds(true)
-                                        .layoutX(5)
-                                        .layoutY(3)
-                                        .build();
+        Region closeIcon = new Region();
+        closeIcon.getStyleClass().add("close");
+        closeIcon.setOnMousePressed(mouseEvent -> { close(); });
+        closeIcon.setMinWidth(16);
+        closeIcon.setMinHeight(16);
+        closeIcon.setPrefWidth(16);
+        closeIcon.setPrefHeight(16);
+        closeIcon.setPickOnBounds(true);
+        closeIcon.setLayoutX(5);
+        closeIcon.setLayoutY(3);
 
         Pane windowHeader = new Pane();
         windowHeader.getStyleClass().add("header");
@@ -182,13 +173,9 @@ public class PropertiesPane extends Stage {
         });
         windowHeader.getChildren().addAll(headerLabel, closeIcon);
 
+        Background bkg = new Background(new BackgroundFill(Color.rgb(41, 32, 32), new CornerRadii(5), Insets.EMPTY));
         VBox pane = new VBox();
-        pane.setBackground(BackgroundBuilder.create()
-                                            .fills(BackgroundFillBuilder.create()
-                                                                        .fill(Color.rgb(41, 32, 32))
-                                                                        .radii(new CornerRadii(5))
-                                                                        .build())
-                                            .build());
+        pane.setBackground(bkg);
         pane.getChildren().addAll(windowHeader, grid);
 
         Scene scene = new Scene(pane, null);
