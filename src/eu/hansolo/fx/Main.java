@@ -53,9 +53,14 @@ import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -310,7 +315,34 @@ public class Main extends Application {
             }
         });
 
-        optionPane.getChildren().addAll(packageInfo, optionJavaFX, optionCanvas, extendRegion, propertiesButton);
+        Button drawingCodeButton = new Button("Drawing Code");
+        drawingCodeButton.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 13));
+        drawingCodeButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent actionEvent) {
+                final String FILE_NAME = fxgFileName.substring(fxgFileName.lastIndexOf(System.getProperty("file.separator")) + 1);
+                FxgParser     parser     = new FxgParser();
+                FxgTranslator translator = new FxgTranslator();
+                Map<String, List<FxgElement>> layers = parser.getElements(fxgFileName);
+                for (CheckBox layer : layerListView.getItems()) {
+                    if (layers.containsKey(layer.getText())) {
+                        if (!layer.isSelected()) {
+                            layers.remove(layer.getText());
+                        }
+                    }
+                }
+                translator.translate(new StringBuilder(System.getProperties().getProperty("user.home")).append(File.separator).append("Desktop").append(File.separator).toString(), FILE_NAME, layers, Language.JAVAFX, Double.toString(originalSize.getWidth()), Double.toString(originalSize.getHeight()), false, "", propertiesPane.getPropertiesMap(), false);
+                String content = translator.getJavaFxDrawingCode(layers);
+                Path path = FileSystems.getDefault().getPath(new StringBuilder(System.getProperties().getProperty("user.home")).append(File.separator).append("Desktop").toString(), "jfxDrawingCode.java");
+                try {
+                    Files.write(path, content.getBytes(), StandardOpenOption.CREATE);
+                }
+                catch (IOException exception) {
+                    System.out.println("Error writing jfxDrawingCode.java");
+                }
+            }
+        });
+
+        optionPane.getChildren().addAll(packageInfo, optionJavaFX, optionCanvas, extendRegion, drawingCodeButton, propertiesButton);
 
         GridPane grid = new GridPane();
         grid.add(dropPane, 0, 0);
